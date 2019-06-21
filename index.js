@@ -12,7 +12,7 @@ function checkParameters() {
         const data = [];
 
         for (let i = 2; i < split.length; i++) {
-            const secs = secondStart + (i - 2) * 178;
+            const secs = secondStart + (i - 2) * 193;
 
             data.push({ seconds: secs, position: Number(split[i]) });
         }
@@ -51,12 +51,22 @@ function readFile(file) {
     let positions = [];
     let average = 0;
     
+    let prevData = null;
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
 
         if (line.includes("Login queue position")) {
             const data = handleLine(line);
-            positions.push(data);
+
+            // If it has taken more than 60 seconds for a login queue update, add it to the graph
+            // Fixes graph scewing up because of 2 -> 2 -> 89 second updates
+            if (prevData)
+                console.log(data.seconds - prevData.seconds)
+
+            if ((prevData && (data.seconds - prevData.seconds) > 60) || !prevData) {
+                prevData = data;
+                positions.push(data);
+            }
         }
     }
 
