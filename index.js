@@ -66,6 +66,8 @@ function calculateEst(data) {
     const left = date.toISOString().substr(11, 8);
 
     updateUI(last, left, timeLeft);
+    createChart(data);
+    //createShareLink(data, timeLeft)
 }
 
 function updateUI(last, left, timeLeft) {
@@ -75,4 +77,62 @@ function updateUI(last, left, timeLeft) {
     $("#pos")[0].innerText = `Login queue position: ${last.position}`;
     $("#est")[0].innerText = `Estimated time left in queue: ${left}`;
     $("#time")[0].innerText = `This means you'll be able to log in at: ${date.toString()}`
+}
+
+function createChart(dataPoints) {
+    const data = [];
+    const labels = [];
+
+    dataPoints.forEach(t => {
+        data.push(t.position);
+        labels.push(t.seconds);
+    });
+
+    const ctx = $("#chart")[0].getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Position in queue',
+                fill: false,
+				backgroundColor: 'rgba(0, 181, 204, 1)',
+				borderColor: 'rgba(0, 181, 204, 1)',
+                data: data
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                xAxes: [{
+                    display: true,
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Time taken in queue (seconds)'
+                    }
+                }],
+                yAxes: [{
+                    display: true,
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Position in queue'
+                    }
+                }]
+            }
+        }
+    })
+}
+
+function createShareLink(data, timeLeft) {
+    const arr = [];
+
+    arr.push(timeLeft);
+    for (let i = 0; i < data.length; i++) {
+        const d = data[i];
+
+        arr.push(d.position);
+        arr.push(d.seconds);
+    }
+
+    
 }

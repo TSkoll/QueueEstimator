@@ -16,8 +16,12 @@
         <p style="margin-bottom: 0; margin-top: 20px" id="pos">Login queue position: 0</p>
         <p style="margin-bottom: 0" id="est">Estimated time left in queue: 0</p>
         <p id="time">This means you'll be able to log in at: </p>
+
+        <canvas id="chart" width="600" height="400"></canvas>
     </div>
 </body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/base64-string.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.min.js" integrity="sha256-Uv9BNBucvCPipKQ2NS9wYpJmi8DTOEfTA/nH2aoJALw=" crossorigin="anonymous"></script>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="index.js"></script>
 </html>
