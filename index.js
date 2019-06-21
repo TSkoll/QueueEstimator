@@ -9,8 +9,8 @@ function checkParameters() {
 
         const timeLeft = Number(split[0]);
         const secondStart = Number(split[1]);
-        const data = [];
 
+        const data = [];
         for (let i = 2; i < split.length; i++) {
             const secs = secondStart + (i - 2) * 193;
 
@@ -31,6 +31,7 @@ function drop(e) {
     reader.onload = event => {
         readFile(event.target.result);
     }
+
     reader.readAsText(file);
 }
 
@@ -43,7 +44,6 @@ function readFile(file) {
     const lines = file.split(/\n/g);
 
     let positions = [];
-    let average = 0;
     
     let prevData = null;
     for (let i = 0; i < lines.length; i++) {
@@ -54,7 +54,6 @@ function readFile(file) {
 
             // If it has taken more than 60 seconds for a login queue update, add it to the graph
             // Fixes graph scewing up because of 2 -> 2 -> 89 second updates
-
             if ((prevData && (data.seconds - prevData.seconds) > 60) || !prevData) {
                 prevData = data;
                 positions.push(data);
@@ -180,6 +179,5 @@ function createShareLink(data, timeLeft) {
         arr.push(data[data.length - 1].position);
 
     const comp = btoa(arr)
-
     $("#share").val(`https://${window.location.host}${window.location.pathname.slice(0, -1)}?q=${comp}`)
 }
