@@ -181,5 +181,5 @@ function createShareLink(data, timeLeft) {
 
     const comp = btoa(arr)
 
-    $("#share").val(`${window.location.host}${window.location.pathname.slice(0, -1)}?q=${comp}`)
+    $("#share").val(`https://${window.location.host}${window.location.pathname.slice(0, -1)}?q=${comp}`)
 }
