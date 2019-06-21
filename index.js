@@ -1,3 +1,32 @@
+function checkParameters() {
+    const query = window.location;
+    var url = new URL(query);
+    const q = url.searchParams.get("q");
+
+    if (q) {
+        const string = atob(q);
+        const split = string.split(/\,/g)
+
+        const timeLeft = Number(split[0]);
+        const secondStart = Number(split[1]);
+        const data = [];
+
+        for (let i = 2; i < split.length; i++) {
+            const secs = secondStart + (i - 2) * 178;
+
+            data.push({ seconds: secs, position: Number(split[i]) });
+        }
+
+        const date = new Date(null);
+        date.setSeconds(timeLeft);
+
+        const left = date.toISOString().substr(11, 8);
+
+        updateUI({ position: data[data.length - 1].position }, left, timeLeft);
+        createChart(data);
+    }
+}
+
 function drop(e) {
     e.preventDefault();
 
@@ -67,7 +96,7 @@ function calculateEst(data) {
 
     updateUI(last, left, timeLeft);
     createChart(data);
-    //createShareLink(data, timeLeft)
+    createShareLink(data, timeLeft);
 }
 
 function updateUI(last, left, timeLeft) {
@@ -127,12 +156,18 @@ function createShareLink(data, timeLeft) {
     const arr = [];
 
     arr.push(timeLeft);
-    for (let i = 0; i < data.length; i++) {
+    arr.push(data[0].seconds);
+
+    for (let i = 0; i < data.length; i+=2) {
         const d = data[i];
 
         arr.push(d.position);
-        arr.push(d.seconds);
     }
 
-    
+    if (arr[arr.length - 1] != data[data.length - 1].position)
+        arr.push(data[data.length - 1].position);
+
+    const comp = btoa(arr)
+
+    $("#share").val(`https://${window.location.host}q=${comp}`)
 }
