@@ -17,13 +17,7 @@ function checkParameters() {
             data.push({ seconds: secs, position: Number(split[i]) });
         }
 
-        const date = new Date(null);
-        date.setSeconds(timeLeft);
-
-        const left = date.toISOString().substr(11, 8);
-
-        updateUI({ position: data[data.length - 1].position }, left, timeLeft);
-        createChart(data);
+        calculateEst(data);
     }
 }
 
@@ -60,8 +54,6 @@ function readFile(file) {
 
             // If it has taken more than 60 seconds for a login queue update, add it to the graph
             // Fixes graph scewing up because of 2 -> 2 -> 89 second updates
-            if (prevData)
-                console.log(data.seconds - prevData.seconds)
 
             if ((prevData && (data.seconds - prevData.seconds) > 60) || !prevData) {
                 prevData = data;
@@ -92,17 +84,23 @@ function calculateEst(data) {
 
     // Calculate how many positions we have moved since joining
     const deltaPos = first.position - last.position;
+    console.log(deltaPos);
 
     // Calculate for how long we've been in the queue (in seconds)
     const deltaTime = last.seconds - first.seconds;
 
     const delta = deltaPos / deltaTime;
 
-    const timeLeft = last.position / delta;
-    const date = new Date(null);
-    date.setSeconds(timeLeft);
+    const timeLeft = (delta > 0) ? last.position / delta : null;
+    console.log(timeLeft)
 
-    const left = date.toISOString().substr(11, 8);
+    let date = null
+    if (timeLeft) {
+        date = new Date(null);
+        date.setSeconds(timeLeft);
+    }
+
+    const left = (date && date.toISOString().substr(11, 8)) || "Hold on, we're going up in the queue!";
 
     updateUI(last, left, timeLeft);
     createChart(data);
@@ -110,12 +108,16 @@ function calculateEst(data) {
 }
 
 function updateUI(last, left, timeLeft) {
-    const date = new Date();
-    date.setSeconds(date.getSeconds() + timeLeft)
+    let date = null;
+
+    if (timeLeft) {
+        date = new Date();
+        date.setSeconds(date.getSeconds() + timeLeft)
+    }
 
     $("#pos")[0].innerText = `Login queue position: ${last.position}`;
     $("#est")[0].innerText = `Estimated time left in queue: ${left}`;
-    $("#time")[0].innerText = `This means you'll be able to log in at: ${date.toString()}`
+    $("#time")[0].innerText = `This means you'll be able to log in at: ${date && date.toString() || "Unable to give an accurate estimation while we're going up in the queue."}`
 }
 
 function createChart(dataPoints) {
@@ -179,5 +181,5 @@ function createShareLink(data, timeLeft) {
 
     const comp = btoa(arr)
 
-    $("#share").val(`https://${window.location.host}${window.location.pathname.slice(0, -1)}?q=${comp}`)
+    $("#share").val(`${window.location.host}${window.location.pathname.slice(0, -1)}?q=${comp}`)
 }
