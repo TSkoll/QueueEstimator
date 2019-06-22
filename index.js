@@ -1,3 +1,6 @@
+let update = false;
+const breakPoint = 500;
+
 function checkParameters() {
     const query = window.location;
     var url = new URL(query);
@@ -10,14 +13,27 @@ function checkParameters() {
         const timeLeft = Number(split[0]);
         const secondStart = Number(split[1]);
 
-        const data = [];
+        const positions = [];
+        const breakPoints = [];
+        let previousBreakPoint = 0;
+
+        let prevData = null;
         for (let i = 2; i < split.length; i++) {
             const secs = secondStart + (i - 2) * 89;
 
-            data.push({ seconds: secs, position: Number(split[i]) });
+            const data = { seconds: secs, position: Number(split[i]) };
+            data.change = (prevData && prevData.position || data.position) - data.position
+
+            if (data.change > (breakPoint + previousBreakPoint) || data.change < (-breakPoint + previousBreakPoint)) {
+                previousBreakPoint = data.change;
+                breakPoints.push(positions.length);
+            }
+
+            prevData = data;
+            positions.push(data);
         }
 
-        calculateEst(data);
+        calculateEst(positions, breakPoints);
     }
 }
 
@@ -30,6 +46,7 @@ function drop(e) {
     const reader = new FileReader();
     reader.onload = event => {
         readFile(event.target.result);
+        update = true;
     }
 
     reader.readAsText(file);
@@ -44,7 +61,9 @@ function readFile(file) {
     const lines = file.split(/\n/g);
 
     let positions = [];
-    
+    let breakPoints = [];
+    let previousBreakPoint = 0;
+
     let prevData = null;
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -54,14 +73,21 @@ function readFile(file) {
 
             // If it has taken more than 60 seconds for a login queue update, add it to the graph
             // Fixes graph scewing up because of 2 -> 2 -> 89 second updates
-            if ((prevData && (data.seconds - prevData.seconds) > 60) || !prevData) {
+            if ((prevData && (data.seconds - prevData.seconds) >= 60) || !prevData) {
+                data.change = (prevData && prevData.position || data.position) - data.position
+                
+                if (data.change > (breakPoint + previousBreakPoint) || data.change < (-breakPoint + previousBreakPoint)) {
+                    previousBreakPoint = data.change;
+                    breakPoints.push(positions.length);
+                }
+
                 prevData = data;
                 positions.push(data);
             }
         }
     }
 
-    calculateEst(positions);
+    calculateEst(positions, breakPoints);
 }
 
 function handleLine(line) {
@@ -77,20 +103,13 @@ function handleLine(line) {
     return data;
 }
 
-function calculateEst(data) {
-    const first = data[0];
+function calculateEst(data, breakPoints) {
     const last = data[data.length - 1];
 
-    // Calculate how many positions we have moved since joining
-    const deltaPos = first.position - last.position;
-    console.log(deltaPos);
+    const delta = determineDelta(data, breakPoints);
+    console.log(delta);
 
-    // Calculate for how long we've been in the queue (in seconds)
-    const deltaTime = last.seconds - first.seconds;
-
-    const delta = deltaPos / deltaTime;
-
-    const timeLeft = (delta > 0) ? last.position / delta : null;
+    const timeLeft = (delta <= 0) ? last.position / delta : null;
     console.log(timeLeft)
 
     let date = null
@@ -104,6 +123,37 @@ function calculateEst(data) {
     updateUI(last, left, timeLeft);
     createChart(data);
     createShareLink(data, timeLeft);
+}
+
+function determineDelta(data, breakPoints) {
+    /* if (breakPoints.length > 20) {
+        let prevPoint = 1
+        
+        let deltaSum = 0;
+        for (let i = 1; i < breakPoints.length; i++) {
+            const bP = breakPoints[i];
+            
+            console.log(data[prevPoint], data[bP - 1])
+            deltaSum += calculateDelta(data[prevPoint], data[bP - 1]);
+            prevPoint = bP;
+        }
+
+
+        return deltaSum / (breakPoints.length - 1);
+    } */
+
+    // console.log(data, data[0], data[data.length - 1])
+    // If no shift points were found just take an average of the first and the last point
+    return calculateDelta(data[0], data[data.length - 1]);
+}
+
+function calculateDelta(A, B) {
+    console.log(A, B)
+
+    const deltaPos = B.position - A.position;
+    const deltaTime = B.seconds - A.seconds;
+
+    return deltaPos / deltaTime;
 }
 
 function updateUI(last, left, timeLeft) {
@@ -120,11 +170,15 @@ function updateUI(last, left, timeLeft) {
 }
 
 function createChart(dataPoints) {
-    const data = [];
+    const quePosition = [];
+    const queChange = [];
+
     const labels = [];
 
     dataPoints.forEach(t => {
-        data.push(t.position);
+        quePosition.push(t.position);
+        queChange.push(t.change);
+
         labels.push(t.seconds);
     });
 
@@ -138,7 +192,14 @@ function createChart(dataPoints) {
                 fill: false,
 				backgroundColor: 'rgba(0, 181, 204, 1)',
 				borderColor: 'rgba(0, 181, 204, 1)',
-                data: data
+                data: quePosition
+            },
+            {
+                label: 'Positions changed',
+                fill: false,
+                backgroundColor: 'rgba(217, 30, 24, 1)',
+                borderColor: 'rgba(217, 30, 24, 1)',
+                data: queChange
             }]
         },
         options: {
@@ -154,7 +215,7 @@ function createChart(dataPoints) {
                 yAxes: [{
                     display: true,
                     scaleLabel: {
-                        display: true,
+                        display: false,
                         labelString: 'Position in queue'
                     }
                 }]
