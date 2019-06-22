@@ -12,7 +12,7 @@ function checkParameters() {
 
         const data = [];
         for (let i = 2; i < split.length; i++) {
-            const secs = secondStart + (i - 2) * 193;
+            const secs = secondStart + (i - 2) * 89;
 
             data.push({ seconds: secs, position: Number(split[i]) });
         }
@@ -169,7 +169,7 @@ function createShareLink(data, timeLeft) {
     arr.push(timeLeft);
     arr.push(data[0].seconds);
 
-    for (let i = 0; i < data.length; i+=2) {
+    for (let i = 0; i < data.length; i++) {
         const d = data[i];
 
         arr.push(d.position);
